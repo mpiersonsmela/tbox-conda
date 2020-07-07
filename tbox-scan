@@ -63,7 +63,7 @@ while getopts 'f:o:i:l:m:vc:sh' flag; do
     s) silence='True' ;;
     c) cutoff="${OPTARG}" ;;
     h) print_usage
-        exit 1 ;;
+        exit 0 ;;
     *) print_usage
        exit 1 ;;
   esac
