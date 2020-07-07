@@ -1,0 +1,76 @@
+#Tbox-scan
+#Version 1.0.0.
+#Updated June 24, 2020
+#By Merrick Pierson Smela and Jorge A. Marchand
+#Harvard Medical School - Department of Genetics
+#George M. Church Lab
+
+
+#Input flags
+infernal_out='INFERNAL.txt'
+model='1'
+input_file=''
+log_file='tbox-scan_log.txt'
+output_file='out.csv'
+verbose='False'
+silence='False'
+cutoff='15'
+
+#User help message
+print_usage() {
+  printf "
+  
+  tbox-scan v1.0.0 (June 2020)
+
+  Usage: tbox-scan -f <Input FASTA file> [-options]
+
+  Scan a fasta sequence file for T-boxes and predict specifier & T-box sequence.
+            -- Default: Will use INFERNAL with RFAM00230 covariance model with basic output
+            -- Example: tbox-scan  -f input.fa -o output_file.csv -v -m 1 -c 100
+  Dependencies: INFERNAL, cmsearch, biopython, python3, pandas.
+
+            
+  Options
+    -f <file>  : input FASTA <file> (required)
+    -o <file>  : save final results in <file> as .csv
+                    default: out.csv
+    -i <file>  : save INFERNAL output predictions to .txt <file>
+                    default: INFERNAL.txt
+    -l <file>  : save a .txt log <file> of pipeline output
+    -m <model#> : search for T-boxes using different covariance models
+                    1: RFAM model (RFAM00230.cm), finds mostly class I transcriptional T-boxes (default)
+                    2: Translational Ile (TBDB001.cm), finds mostly class II translational T-boxes
+    -c <value> : score cutoff for INFERNAL model predictions (default = 15)
+    -v         : save verbose output
+    -s         : silence console output
+    -h         : print out summary of available options
+
+
+"
+
+}
+
+
+#Flag handling
+while getopts 'f:o:i:l:m:vc:sh' flag; do
+  case "${flag}" in
+    f) input_file="${OPTARG}" ;;
+    o) output_file="${OPTARG}" ;;
+    i) infernal_out="${OPTARG}" ;;
+    l) log_file="${OPTARG}" ;;
+    m) model="${OPTARG}" ;;
+    v) verbose='True' ;;
+    s) silence='True' ;;
+    c) cutoff="${OPTARG}" ;;
+    h) print_usage
+        exit 1 ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
+
+#Try running using python
+python -m tboxscan.tboxscnr $input_file $output_file $model $infernal_out $log_file $verbose $silence $cutoff
+
+#||echo Error: T-box scanning pipeline failed. Check proper usage, dependencies, and auxilliary files. && print_usage
