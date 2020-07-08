@@ -13,6 +13,7 @@ import sys
 
 
 #Input parameters
+parent_path = os.path.dirname(sys.argv[0])
 infile = sys.argv[1]
 outfile = sys.argv[2]
 infernal = sys.argv[4]
@@ -23,10 +24,10 @@ cutoff = sys.argv[8]
 
 #Covariance model choice
 if sys.argv[3]=='1':
-    cm = os.path.join('tboxscan','data','RF00230.cm')
+    cm = os.path.join(parent_path,'data','RF00230.cm')
     mode='classI'
 elif sys.argv[3]=='2':
-    cm = os.path.join('tboxscan','data','TBDB001.cm')
+    cm = os.path.join(parent_path,'data','TBDB001.cm')
     mode='classII'
 else:
     print('Invalid covariance model supplied. Try using -m 1 or -m 2 as flags')
@@ -44,7 +45,7 @@ if os.path.exists(cm)==False:
     print('Error: Covariance model '+cm+' does not exist.')
     sys.exit(1)
 
-aa_lut_path = os.path.join('tboxscan','data','rccodonLUT.csv')
+aa_lut_path = os.path.join(parent_path,'data','rccodonLUT.csv')
 
 if not os.path.exists(aa_lut_path):
     print('Error: Missing amino acid LUT file: '+aa_lut_path)
@@ -61,11 +62,11 @@ os.system('rm '+outfile+' >/dev/null 2> /dev/null')
 if mode == "classI":
     os.system('cmsearch --notrunc --notextw '+cm+' '+infile+' > '+infernal)
     print("INFERNAL output saved to " +infernal+ " Extracting features . . .")
-    os.system('python tboxscan/pipeline_master.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
+    os.system('python '+parent_path+'/pipeline_master.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
 elif mode == "classII":
     os.system('cmsearch --notrunc --notextw '+cm+' '+infile+' > '+infernal)
     print("INFERNAL output saved to " +infernal+ " Extracting features . . .")
-    os.system('python tboxscan/pipeline_translational.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
+    os.system('python '+parent_path+'/pipeline_translational.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
 
 
 #Read output file
