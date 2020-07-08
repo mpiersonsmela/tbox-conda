@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #Tbox-scan
-#Version 1.0.0.
-#Updated June 24, 2020
+#Version 0.1.3
+#Updated July 8, 2020
 #By Merrick Pierson Smela and Jorge A. Marchand
 #Harvard Medical School - Department of Genetics
 #George M. Church Lab
