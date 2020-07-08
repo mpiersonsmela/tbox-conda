@@ -334,7 +334,7 @@ def get_fold(sequence):
     energy = ""
     errors = ""
 
-    vienna_args = ['RNAfold', '-T', '37'] # arguments used to call RNAfold at 37 degrees
+    vienna_args = ['RNAfold', '-T', '37', '--noPS'] # arguments used to call RNAfold at 37 degrees
     vienna_input = str(sequence) # the input format
     vienna_call = subprocess.run(vienna_args, stdout = subprocess.PIPE, stderr = subprocess.PIPE, input = vienna_input, encoding = 'ascii')
     
@@ -354,7 +354,7 @@ def get_fold_constraints(sequence, structure):
     errors = ""
     structure_out = ""
 
-    vienna_args = ['RNAfold', '-T', '37', '-C'] # arguments used to call RNAfold at 37 degrees with constraints
+    vienna_args = ['RNAfold', '-T', '37', '-C', '--noPS'] # arguments used to call RNAfold at 37 degrees with constraints
     vienna_input = str(sequence) + '\n' + str(structure) # the input format
     vienna_call = subprocess.run(vienna_args, stdout = subprocess.PIPE, stderr = subprocess.PIPE, input = vienna_input, encoding = 'ascii')
     

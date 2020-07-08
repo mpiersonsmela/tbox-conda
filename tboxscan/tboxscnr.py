@@ -8,9 +8,8 @@
 
 import os
 import pandas as pd
-from os import path
 import sys
-import pkg_resources
+#import pkg_resources
 
 
 #Input parameters
@@ -24,31 +23,35 @@ cutoff = sys.argv[8]
 
 #Covariance model choice
 if sys.argv[3]=='1':
-    cm = pkg_resources.resource_filename('tboxscan', 'data/RF00230.cm')
+    cm = os.path.join('tboxscan','data','RF00230.cm')
     mode='classI'
 elif sys.argv[3]=='2':
-    cm = pkg_resources.resource_filename('tboxscan', 'data/TBDB001.cm')
+    cm = os.path.join('tboxscan','data','TBDB001.cm')
     mode='classII'
 else:
     print('Invalid covariance model supplied. Try using -m 1 or -m 2 as flags')
-    exit()
+    sys.exit(1)
     
 #Initialize
-print('\nRunning T-box scanner on '+infile+' using covariance model for '+mode+' t-boxes'+'\n')
+print('\nRunning T-box scanner on '+infile+' using covariance model '+cm+' for '+mode+' t-boxes'+'\n')
 
 #Check files exist
-if path.exists(infile)==False:
+if os.path.exists(infile)==False:
     print('Error: Input file '+infile+' does not exist.')
+    sys.exit(1)
 
-if path.exists(cm)==False:
+if os.path.exists(cm)==False:
     print('Error: Covariance model '+cm+' does not exist.')
+    sys.exit(1)
 
-if path.exists(pkg_resources.resource_filename('tboxscan', 'data/rccodonLUT.csv'))==False:
-    print('Error: Missing amino acid LUT file '+pkg_resources.resource_filename('tboxscan', 'data/rccodonLUT.csv')+'.')
+aa_lut_path = os.path.join('tboxscan','data','rccodonLUT.csv')
 
+if not os.path.exists(aa_lut_path):
+    print('Error: Missing amino acid LUT file: '+aa_lut_path)
+    sys.exit(1)
 
 #Look up table for amino acid family predictions
-aalut=pd.read_csv(pkg_resources.resource_filename('tboxscan', 'data/rccodonLUT.csv'))
+aalut=pd.read_csv(aa_lut_path)
  
 #Remove previous out file
 os.system('rm '+outfile+' >/dev/null 2> /dev/null')
@@ -58,11 +61,11 @@ os.system('rm '+outfile+' >/dev/null 2> /dev/null')
 if mode == "classI":
     os.system('cmsearch --notrunc --notextw '+cm+' '+infile+' > '+infernal)
     print("INFERNAL output saved to " +infernal+ " Extracting features . . .")
-    os.system('python -m tboxscan.pipeline_master '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
+    os.system('python tboxscan/pipeline_master.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
 elif mode == "classII":
     os.system('cmsearch --notrunc --notextw '+cm+' '+infile+' > '+infernal)
     print("INFERNAL output saved to " +infernal+ " Extracting features . . .")
-    os.system('python -m tboxscan.pipeline_translational '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
+    os.system('python tboxscan/pipeline_translational.py '+infernal+' '+outfile+' '+infile+' $3 > '+logfile)
 
 
 #Read output file
@@ -101,5 +104,4 @@ try:
         
 except:
     print('Error: Failed to detect T-boxes in '+infile+' using '+cm)
-
-
+    sys.exit(1)

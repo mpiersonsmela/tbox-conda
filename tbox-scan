@@ -1,6 +1,7 @@
+#!/usr/bin/env bash
 #Tbox-scan
-#Version 1.0.0.
-#Updated June 24, 2020
+#Version 0.1.2
+#Updated July 8, 2020
 #By Merrick Pierson Smela and Jorge A. Marchand
 #Harvard Medical School - Department of Genetics
 #George M. Church Lab
@@ -20,7 +21,7 @@ cutoff='15'
 print_usage() {
   printf "
   
-  tbox-scan v1.0.0 (June 2020)
+  tbox-scan v0.1.2 (July 2020)
 
   Usage: tbox-scan -f <Input FASTA file> [-options]
 
@@ -71,6 +72,6 @@ done
 
 
 #Try running using python
-python -m tboxscan.tboxscnr $input_file $output_file $model $infernal_out $log_file $verbose $silence $cutoff
+python tboxscan/tboxscnr.py $input_file $output_file $model $infernal_out $log_file $verbose $silence $cutoff
 
 #||echo Error: T-box scanning pipeline failed. Check proper usage, dependencies, and auxilliary files. && print_usage
