@@ -179,6 +179,8 @@ def tbox_features_translational(seq, struct, offset = 0):
     s1_end += offset
     antiterm_start += offset + 1
     antiterm_end += offset
+    discrim_start += offset
+    discrim_end += offset - 1
     
     #Return a tuple with the features identified
     return (s1_start, s1_loop_start, s1_loop_end, codon, s1_end, antiterm_start, discrim, antiterm_end, codon_region, warnings, discrim_start, discrim_end)
@@ -253,9 +255,12 @@ def tbox_derive(tboxes):
             aterm_start = int(tboxes['antiterm_start'][i])
             if aterm_start > 0:
                 tboxes.at[tboxes.index[i], 'antiterm_start'] = mapping[aterm_start]
-                #Calculate discriminator range
-                tboxes.at[tboxes.index[i], 'discrim_start'] = mapping[aterm_start + 4]
-                tboxes.at[tboxes.index[i], 'discrim_end'] = mapping[aterm_start + 7]
+                
+            #Calculate discriminator range
+            discrim_start = int(tboxes['discrim_start'][i])
+            if discrim_start > 0:
+                tboxes.at[tboxes.index[i], 'discrim_start'] = mapping[discrim_start]
+                tboxes.at[tboxes.index[i], 'discrim_end'] = mapping[discrim_start +  3] #+3 because inclusive
 
             aterm_end = int(tboxes['antiterm_end'][i])
             if aterm_end > 0:
@@ -325,7 +330,7 @@ def make_antiterm_constraints(sequence, structure):
         if(discriminator):
             constraints = constraints[:(discriminator.start() + match.start() + 1)] + 'xxxx' + constraints[(discriminator.end() + match.start() + 1):]
             structure_out, energy, errors = get_fold_constraints(sequence, constraints)
-            if structure_out[3] != '(': #check if base immediately before UGGN is paired
+            if len(structure_out) < 4 or structure_out[3] != '(': #check if base immediately before UGGN is paired
                 errors += "BAD_ANTITERM_STEM"
             return structure_out, energy, errors
     return None, None, None
@@ -565,7 +570,7 @@ def parse_structures(fasta_sequence, tbox_start, tbox_end, sequence, structure):
     index = 0
     structures = []
     while(index < len(dot_structure) - 1):
-        if(my_pairs[index] != None):
+        if (my_pairs[index] != None) and not None in my_pairs[index]:
             if(my_pairs[index][0] == '('):
                 # this is a secondary structure element (a stem)
                 #use 1-index
@@ -689,6 +694,72 @@ def trim(seq_df):
     print("Trimmed sequences: " + str(counter))
     return seq_df
 
+def wobblepair(base1, base2):
+    base1 = base1.upper().replace('T','U')
+    base2 = base2.upper().replace('T','U')
+    if base1 == 'A':
+        return base2 == 'U'
+    if base1 == 'C':
+        return base2 == 'G'
+    if base1 == 'G':
+        return base2 == 'C' or base2 == 'U'
+    if base1 == 'U':
+        return base2 == 'A' or base2 == 'G'
+    if base1 == 'N' or base2 == 'N':
+        return True
+    return False
+
+def clean(dot_structure, seq):
+    if pd.isna(dot_structure) or pd.isna(seq):
+        return None
+    str_clean = ['.']*len(dot_structure)
+    
+    str_len = len(dot_structure)
+    
+    for i in range(str_len - 1):
+        if dot_structure[i] == '(':
+            l_count = 1 #counting the original '(' that we're looking for
+            for j in range(i+1, str_len):
+                if dot_structure[j] == '(':
+                    l_count += 1
+                if dot_structure[j] == ')':
+                    l_count -= 1
+                if l_count == 0: #We found the pair!
+                    if wobblepair(seq[i],seq[j]): #But is it good?
+                        str_clean[i] = '('
+                        str_clean[j] = ')'
+                    break
+    return "".join(str_clean) #Convert to string from list
+
+
+def clean_sequences(predseq):
+    predseq["codon_region"]=predseq["codon_region"].str.upper()
+    predseq["codon"]=predseq["codon"].str.upper()
+    predseq["FASTA_sequence"]=predseq["FASTA_sequence"].str.upper()
+    
+    predseq[["Trimmed_antiterm_struct"]] = predseq.apply(lambda x: clean(x['Trimmed_antiterm_struct'], x['Trimmed_sequence']), axis = 'columns', result_type = 'expand')
+    predseq[["Trimmed_term_struct"]] = predseq.apply(lambda x: clean(x['Trimmed_term_struct'], x['Trimmed_sequence']), axis = 'columns', result_type = 'expand')
+    
+    return predseq
+
+def add_thermocalc(predseq):
+    deltadeltaG = [None] * len(predseq)
+    
+    for i in range(0, len(predseq)):
+        print('Thermocalculation for index - '+str(i))
+        try:
+            term_e=float(predseq['new_term_energy'].iloc[i])
+            anti_e=float(predseq['vienna_antiterminator_energy'].iloc[i])
+            ddG=float(term_e)-float(anti_e)
+            deltadeltaG[i]=str(ddG)
+
+        except (ValueError, TypeError):
+            pass
+    
+    predseq['deltadelta_g']=deltadeltaG
+    
+    return predseq
+
 #The main function to predict T-boxes
 def tbox_predict(INFERNAL_file, predictions_file, fasta_file = None, score_cutoff = 15):
     score_cutoff = int(score_cutoff) #makes it an int, if it was passed as a string
@@ -762,11 +833,12 @@ def tbox_predict(INFERNAL_file, predictions_file, fasta_file = None, score_cutof
     #Add the fasta sequences
     for i in range(len(tbox_all_DF['Name'])):
         with open(fasta_file) as f:
-            for fasta in SeqIO.parse(f,'fasta'): #there should just be 1
-                if tbox_all_DF['Strand'][i] == '+':
-                    tbox_all_DF.at[tbox_all_DF.index[i], 'FASTA_sequence'] = str(fasta.seq[tbox_all_DF['Tbox_start'][i] - 1:tbox_all_DF['Tbox_end'][i] + downstream_bases])
-                elif tbox_all_DF['Strand'][i] == '-':
-                    tbox_all_DF.at[tbox_all_DF.index[i], 'FASTA_sequence'] = str(fasta.seq[tbox_all_DF['Tbox_end'][i] - 1:tbox_all_DF['Tbox_start'][i] + downstream_bases].reverse_complement())
+            for fasta in SeqIO.parse(f,'fasta'):
+                if fasta.id == tbox_all_DF['Name'][i]:
+                    if tbox_all_DF['Strand'][i] == '+':
+                        tbox_all_DF.at[tbox_all_DF.index[i], 'FASTA_sequence'] = str(fasta.seq[tbox_all_DF['Tbox_start'][i] - 1:tbox_all_DF['Tbox_end'][i] + downstream_bases])
+                    elif tbox_all_DF['Strand'][i] == '-':
+                        tbox_all_DF.at[tbox_all_DF.index[i], 'FASTA_sequence'] = str(fasta.seq[tbox_all_DF['Tbox_end'][i] - 1:tbox_all_DF['Tbox_start'][i] + downstream_bases].reverse_complement())
 
     #Reset the T-box start and end
     tbox_all_DF['Name'] = tbox_all_DF['Name']+':'+tbox_all_DF['Tbox_start'].astype(str)+'-'+tbox_all_DF['Tbox_end'].astype(str)
@@ -776,7 +848,6 @@ def tbox_predict(INFERNAL_file, predictions_file, fasta_file = None, score_cutof
     
     tbox_all_DF['Tbox_end'] = tbox_all_DF['Tbox_end'] - downstream_bases #adjust for downstream bases
 
-    
     #Set the terminator end
     tbox_all_DF['term_end'] = tbox_all_DF['Tbox_end']
     
@@ -784,11 +855,18 @@ def tbox_predict(INFERNAL_file, predictions_file, fasta_file = None, score_cutof
     derived = tbox_derive(tbox_all_DF)
     #Checkpoint
     derived.to_csv(predictions_file, index = False, header = True)
+    
     print("Starting thermo calculations")
     thermo = run_thermo(derived)
+    thermo = add_thermocalc(thermo)
     
-    #Trim to terminator end (placeholder function, does nothing for now)
+    print('Removing duplicate T-boxes')
+    thermo.drop_duplicates(subset = 'Sequence', keep = 'first', inplace = True) #Drop duplicate T-boxes
+    
+    print('Trimming structures and sequences')
+    thermo.to_csv(predictions_file, index = False, header = True)
     thermo = trim(thermo)
+    thermo = clean_sequences(thermo)
     
     #Write output
     thermo.to_csv(predictions_file, index = False, header = True)
