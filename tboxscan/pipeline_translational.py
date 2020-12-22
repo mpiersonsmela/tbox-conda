@@ -630,8 +630,8 @@ def run_thermo(tboxes):
     tboxes[['vienna_antiterminator_structure', 'vienna_antiterminator_energy', 'vienna_antiterminator_errors']] = tboxes.apply(lambda x: make_antiterm_constraints(x['antiterm_term_sequence'], x['infernal_antiterminator_structure']), axis = 'columns', result_type = 'expand')
     print('Antiterminator re-folding done.')
     # get the terminator structure and energy, structure is term structure with dots in front so that structure 
-    # spans from antiterm_start to term_end
-    tboxes['terminator_structure'] = tboxes.apply(lambda x: ('.' * 8 + x['term_structure']), axis = 'columns', result_type = 'expand')
+    # spans from antiterm_start to term_end. Use offset of 10 (instead of 8 for transcriptional T-boxes)
+    tboxes['terminator_structure'] = tboxes.apply(lambda x: ('.' * 10 + x['term_structure']), axis = 'columns', result_type = 'expand')
     print('Terminator structure generated.')
     tboxes[['terminator_energy', 'terminator_errors']] = tboxes.apply(lambda x: get_energy(x['antiterm_term_sequence'], x['terminator_structure']), axis = 'columns', result_type = 'expand')
     print('Terminator energy calculated.')
