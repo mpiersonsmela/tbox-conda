@@ -40,8 +40,8 @@ This program is written for unix operating systems and requires INFERNAL, python
         tbox-scan  -f genome_example2.fa -o output_file2.csv -m 1 -s -c 100
 
 # About this work 
-Tbox-scan was written as an auxilliary tool for T-box Annotation Database (https://tbdb.io). More information about how the database was built can be found on the BioRxiv page. If you have questions or issues running tbox-scan, post an issue or message me on twitter @syntbio. 
+Tbox-scan was written as an auxilliary tool for the T-box Annotation Database (https://tbdb.io). More information about how the database was built can be found in the Nucleic Acids Research article. If you have questions or issues running tbox-scan, post an issue or message me on twitter @syntbio. 
 
-- Marchand, J. A., Pierson Smela, M. D., Jordan, T. H. H., Narasimhan, K. & Church, G. M. (2020). TBDB – A database of structurally annotated T-box riboswitch:tRNA pairs. bioRxiv.
+- Marchand, J. A., Pierson Smela, M. D., Jordan, T. H. H., Narasimhan, K. & Church, G. M. TBDB – A database of structurally annotated T-box riboswitch:tRNA pairs. Nucleic Acids Res. 2020 Sep 3; doi: 10.1093/nar/gkaa721
 
 
