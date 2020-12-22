@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #Tbox-scan
-#Version 1.0.1
-#Updated August 1, 2020
+#Version 1.0.2
+#Updated December 22, 2020
 #By Merrick Pierson Smela and Jorge A. Marchand
 #Harvard Medical School - Department of Genetics
 #George M. Church Lab
@@ -21,7 +21,7 @@ cutoff='15'
 print_usage() {
   printf "
   
-  tbox-scan v1.0.1 (August 2020)
+  tbox-scan v1.0.2 (December 2020)
 
   Usage: tbox-scan -f <Input FASTA file> [-options]
 
